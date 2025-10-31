@@ -8,6 +8,10 @@ import {
 import { SimpleShape, SimpleShapeSchema } from '../format/SimpleShape'
 import { Streaming } from '../types/Streaming'
 import { AgentActionUtil } from './AgentActionUtil'
+import {
+	BAR_CHART_SHAPE_TYPE,
+	createDefaultBarChartProps,
+} from '../shapes/BarChartShape'
 
 const CreateAction = z
 	.object({
@@ -84,6 +88,12 @@ export class CreateActionUtil extends AgentActionUtil<CreateAction> {
 }
 
 function getDefaultShape(shapeType: SimpleShape['_type']) {
+	if (shapeType === BAR_CHART_SHAPE_TYPE) {
+		return {
+			...SHARED_DEFAULTS,
+			props: createDefaultBarChartProps(),
+		}
+	}
 	const isGeo = shapeType in SIMPLE_TO_GEO_TYPES
 	return isGeo
 		? SHAPE_DEFAULTS.geo

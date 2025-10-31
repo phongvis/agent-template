@@ -14,11 +14,18 @@ import {
 	TLShapeId,
 	TLTextShape,
 } from 'tldraw'
+import {
+	BAR_CHART_SHAPE_TYPE,
+	TLBarChartShape,
+	computeBarChartLayout,
+	ensureBarIds,
+} from '../shapes/BarChartShape'
 import { convertTldrawFillToSimpleFill } from './SimpleFill'
 import { convertTldrawFontSizeAndScaleToSimpleFontSize } from './SimpleFontSize'
 import { SimpleGeoShapeType } from './SimpleGeoShapeType'
 import {
 	SimpleArrowShape,
+	SimpleBarChartShape,
 	SimpleDrawShape,
 	SimpleGeoShape,
 	SimpleLineShape,
@@ -45,6 +52,8 @@ export function convertTldrawShapeToSimpleShape(editor: Editor, shape: TLShape):
 			return convertNoteShapeToSimple(editor, shape as TLNoteShape)
 		case 'draw':
 			return convertDrawShapeToSimple(editor, shape as TLDrawShape)
+		case BAR_CHART_SHAPE_TYPE:
+			return convertBarChartShapeToSimple(editor, shape as TLBarChartShape)
 		default:
 			return convertUnknownShapeToSimple(editor, shape)
 	}
@@ -62,6 +71,8 @@ export function convertTldrawShapeToSimpleType(shape: TLShape): SimpleShape['_ty
 		case 'note':
 		case 'draw':
 			return shape.type
+		case BAR_CHART_SHAPE_TYPE:
+			return BAR_CHART_SHAPE_TYPE
 		default:
 			return 'unknown'
 	}
@@ -101,6 +112,46 @@ function convertDrawShapeToSimple(editor: Editor, shape: TLDrawShape): SimpleDra
 		fill: convertTldrawFillToSimpleFill(shape.props.fill),
 		note: (shape.meta.note as string) ?? '',
 		shapeId: convertTldrawIdToSimpleId(shape.id),
+	}
+}
+
+function convertBarChartShapeToSimple(editor: Editor, shape: TLBarChartShape): SimpleBarChartShape {
+	const bounds = getSimpleBounds(editor, shape)
+	const normalizedBars = ensureBarIds(shape.props.bars)
+	const layout = computeBarChartLayout({ ...shape.props, bars: normalizedBars })
+	return {
+		_type: BAR_CHART_SHAPE_TYPE,
+		note: (shape.meta.note as string) ?? '',
+		shapeId: convertTldrawIdToSimpleId(shape.id),
+		x: bounds.x,
+		y: bounds.y,
+		w: shape.props.w,
+		h: shape.props.h,
+		title: shape.props.title || undefined,
+		xAxisLabel: shape.props.xAxisLabel || undefined,
+		yAxisLabel: shape.props.yAxisLabel || undefined,
+		maxValue: layout.maxValue,
+		barPadding: shape.props.barPadding,
+		margins: {
+			top: shape.props.marginTop,
+			right: shape.props.marginRight,
+			bottom: shape.props.marginBottom,
+			left: shape.props.marginLeft,
+		},
+		bars: layout.bars.map((bar) => ({
+			barId: bar.barId,
+			label: bar.label,
+			value: bar.value,
+			percentage: Number(bar.percentage.toFixed(4)),
+			relativeX: Number(bar.relativeX.toFixed(4)),
+			relativeWidth: Number(bar.relativeWidth.toFixed(4)),
+			relativeHeight: Number(bar.relativeHeight.toFixed(4)),
+			color: bar.color,
+		})),
+		ticks: layout.ticks.map((tick) => ({
+			value: tick.value,
+			relativeYFromBase: Number(tick.relativeYFromBase.toFixed(4)),
+		})),
 	}
 }
 

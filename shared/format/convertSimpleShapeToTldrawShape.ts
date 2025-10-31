@@ -25,6 +25,7 @@ import { convertSimpleFontSizeToTldrawFontSizeAndScale } from './SimpleFontSize'
 import { SimpleGeoShapeType } from './SimpleGeoShapeType'
 import {
 	SimpleArrowShape,
+	SimpleBarChartShape,
 	SimpleDrawShape,
 	SimpleGeoShape,
 	SimpleLineShape,
@@ -33,6 +34,13 @@ import {
 	SimpleTextShape,
 	SimpleUnknownShape,
 } from './SimpleShape'
+import {
+	BAR_CHART_DEFAULT_PROPS,
+	BAR_CHART_SHAPE_TYPE,
+	BAR_CHART_DEFAULT_TICK_COUNT,
+	TLBarChartShape,
+	ensureBarIds,
+} from '../shapes/BarChartShape'
 
 /**
  * Convert a SimpleShape to a shape object to a tldraw shape using defaultShape for fallback values
@@ -83,6 +91,9 @@ export function convertSimpleShapeToTldrawShape(
 		}
 		case 'draw': {
 			return convertDrawShapeToTldrawShape(editor, simpleShape, { defaultShape })
+		}
+		case BAR_CHART_SHAPE_TYPE: {
+			return convertBarChartShapeToTldrawShape(editor, simpleShape, { defaultShape })
 		}
 		case 'unknown': {
 			return convertUnknownShapeToTldrawShape(editor, simpleShape, { defaultShape })
@@ -538,6 +549,68 @@ function convertDrawShapeToTldrawShape(
 			},
 			meta: {
 				note: simpleShape.note ?? defaultDrawShape.meta?.note ?? '',
+			},
+		},
+	}
+}
+
+function convertBarChartShapeToTldrawShape(
+	editor: Editor,
+	simpleShape: SimpleBarChartShape,
+	{ defaultShape }: { defaultShape: Partial<TLShape> }
+): { shape: TLShape } {
+	const shapeId = convertSimpleIdToTldrawId(simpleShape.shapeId)
+	const existingShape = defaultShape as TLBarChartShape | undefined
+	const baseProps = existingShape?.props ?? BAR_CHART_DEFAULT_PROPS
+	const margins = simpleShape.margins ?? {
+		top: baseProps.marginTop,
+		right: baseProps.marginRight,
+		bottom: baseProps.marginBottom,
+		left: baseProps.marginLeft,
+	}
+	const bars = ensureBarIds(
+		simpleShape.bars.map((bar, index) => ({
+			id: bar.barId || `bar-${index + 1}`,
+			label: bar.label,
+			value: bar.value,
+			color: bar.color,
+		}))
+	)
+
+	const width = simpleShape.w ?? baseProps.w
+	const height = simpleShape.h ?? baseProps.h
+
+	return {
+		shape: {
+			id: shapeId,
+			type: BAR_CHART_SHAPE_TYPE,
+			typeName: 'shape',
+			x: simpleShape.x ?? existingShape?.x ?? 0,
+			y: simpleShape.y ?? existingShape?.y ?? 0,
+			rotation: existingShape?.rotation ?? 0,
+			index: existingShape?.index ?? ('a1' as IndexKey),
+			parentId: existingShape?.parentId ?? editor.getCurrentPageId(),
+			isLocked: existingShape?.isLocked ?? false,
+			opacity: existingShape?.opacity ?? 1,
+			props: {
+				...baseProps,
+				w: width,
+				h: height,
+				title: simpleShape.title ?? baseProps.title,
+				xAxisLabel: simpleShape.xAxisLabel ?? baseProps.xAxisLabel,
+				yAxisLabel: simpleShape.yAxisLabel ?? baseProps.yAxisLabel,
+				bars,
+				barPadding: simpleShape.barPadding ?? baseProps.barPadding,
+				marginTop: margins.top,
+				marginRight: margins.right,
+				marginBottom: margins.bottom,
+				marginLeft: margins.left,
+				tickCount: baseProps.tickCount ?? BAR_CHART_DEFAULT_TICK_COUNT,
+				maxValue: simpleShape.maxValue ?? baseProps.maxValue,
+			},
+			meta: {
+				...(existingShape?.meta ?? {}),
+				note: simpleShape.note ?? existingShape?.meta?.note ?? '',
 			},
 		},
 	}

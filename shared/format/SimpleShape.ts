@@ -3,6 +3,7 @@ import { SimpleColor } from './SimpleColor'
 import { SimpleFillSchema } from './SimpleFill'
 import { SimpleFontSize } from './SimpleFontSize'
 import { SimpleGeoShapeTypeSchema } from './SimpleGeoShapeType'
+import { BAR_CHART_SHAPE_TYPE } from '../shapes/BarChartShape'
 
 const SimpleLabel = z.string()
 
@@ -113,6 +114,54 @@ const SimpleUnknownShape = z
 
 export type SimpleUnknownShape = z.infer<typeof SimpleUnknownShape>
 
+const SimpleBarChartBar = z.object({
+	barId: z.string(),
+	label: z.string(),
+	value: z.number(),
+	percentage: z.number(),
+	relativeX: z.number(),
+	relativeWidth: z.number(),
+	relativeHeight: z.number(),
+	color: z.string().optional(),
+})
+
+const SimpleBarChartTick = z.object({
+	value: z.number(),
+	relativeYFromBase: z.number(),
+})
+
+const SimpleBarChartShape = z
+	.object({
+		_type: z.literal(BAR_CHART_SHAPE_TYPE),
+		note: z.string(),
+		shapeId: z.string(),
+		name: z.string().optional(),
+		x: z.number(),
+		y: z.number(),
+		w: z.number(),
+		h: z.number(),
+		title: z.string().optional(),
+		xAxisLabel: z.string().optional(),
+		yAxisLabel: z.string().optional(),
+		bars: z.array(SimpleBarChartBar),
+		ticks: z.array(SimpleBarChartTick),
+		maxValue: z.number(),
+		barPadding: z.number(),
+		margins: z.object({
+			top: z.number(),
+			right: z.number(),
+			bottom: z.number(),
+			left: z.number(),
+		}),
+	})
+	.meta({
+		title: 'Bar Chart Shape',
+		description:
+			'A bar chart shape renders a categorical dataset using vertical bars. The `bars` array describes each bar with its id, label, value, relative placement, and fill color. Relative metrics are expressed as percentages of the chart\'s inner drawing area so the model can reason about proportions.',
+	})
+
+export type SimpleBarChartShape = z.infer<typeof SimpleBarChartShape>
+
 const SIMPLE_SHAPES = [
 	SimpleDrawShape,
 	SimpleGeoShape,
@@ -120,6 +169,7 @@ const SIMPLE_SHAPES = [
 	SimpleTextShape,
 	SimpleArrowShape,
 	SimpleNoteShape,
+	SimpleBarChartShape,
 	SimpleUnknownShape,
 ] as const
 export const SimpleShapeSchema = z.union(SIMPLE_SHAPES)

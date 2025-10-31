@@ -740,6 +740,7 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 
 	const requestPromise = (async () => {
 		const prompt = await agent.preparePrompt(request, helpers)
+		console.log('[Agent Prompt]', JSON.stringify(prompt, null, 2))
 		let incompleteDiff: RecordsDiff<TLRecord> | null = null
 		const actionPromises: Promise<void>[] = []
 		try {
@@ -771,6 +772,7 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 
 						// The the action is incomplete, save the diff so that we can revert it in the future
 						if (transformedAction.complete) {
+							console.log('[Agent Response]', transformedAction)
 							incompleteDiff = null
 						} else {
 							incompleteDiff = diff

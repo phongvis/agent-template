@@ -8,6 +8,10 @@
 	"type": "module",
 	"scripts": { "build": "vite build", "dev": "vite", "preview": "vite preview" },
 	"dependencies": {
+		"d3-array": "^3.2.4",
+		"d3-axis": "^3.0.0",
+		"d3-scale": "^4.0.2",
+		"d3-selection": "^3.0.0",
 		"@ai-sdk/anthropic": "^2.0.2",
 		"@ai-sdk/google": "^2.0.14",
 		"@ai-sdk/openai": "^2.0.24",

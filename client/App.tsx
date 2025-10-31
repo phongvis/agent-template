@@ -18,6 +18,7 @@ import { ContextHighlights } from './components/highlights/ContextHighlights'
 import { enableLinedFillStyle } from './enableLinedFillStyle'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
+import { BarChartShapeUtil } from './shapes/BarChartShapeUtil'
 
 /**
  * The ID used for this project's agent.
@@ -72,6 +73,7 @@ function App() {
 			),
 		}
 	}, [agent])
+	const shapeUtils = useMemo(() => [BarChartShapeUtil], [])
 
 	return (
 		<TldrawUiToastsProvider>
@@ -82,6 +84,7 @@ function App() {
 						tools={tools}
 						overrides={overrides}
 						components={components}
+						shapeUtils={shapeUtils}
 					>
 						<AppInner setAgent={setAgent} />
 					</Tldraw>

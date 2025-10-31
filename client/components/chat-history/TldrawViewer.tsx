@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
 	defaultAddFontsFromNode,
 	defaultBindingUtils,
@@ -12,6 +12,7 @@ import {
 	TldrawUiContextProvider,
 	TLShape,
 } from 'tldraw'
+import { BarChartShapeUtil } from '../../shapes/BarChartShapeUtil'
 
 export function TldrawViewer({
 	shapes,
@@ -23,6 +24,10 @@ export function TldrawViewer({
 	const [editor, setEditor] = useState<Editor | null>(null)
 	const [isVisible, setIsVisible] = useState(false)
 	const containerRef = useRef<HTMLDivElement>(null)
+	const shapeUtils = useMemo(
+		() => [...defaultShapeUtils, BarChartShapeUtil] as unknown as typeof defaultShapeUtils,
+		[]
+	)
 
 	// Hide the component if it's outside of the current scroll area
 	useEffect(() => {
@@ -69,7 +74,7 @@ export function TldrawViewer({
 					components={components ?? {}}
 					inferDarkMode={false}
 					onMount={setEditor}
-					shapeUtils={defaultShapeUtils}
+					shapeUtils={shapeUtils}
 					bindingUtils={defaultBindingUtils}
 					tools={tools}
 					textOptions={defaultTextOptions}

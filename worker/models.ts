@@ -1,4 +1,4 @@
-export const DEFAULT_MODEL_NAME = 'claude-4.5-sonnet'
+export const DEFAULT_MODEL_NAME = 'gpt-4.1'
 
 export type AgentModelName = keyof typeof AGENT_MODEL_DEFINITIONS
 export type AgentModelProvider = 'openai' | 'anthropic' | 'google'
@@ -27,25 +27,25 @@ export function getAgentModelDefinition(modelName: AgentModelName): AgentModelDe
 
 export const AGENT_MODEL_DEFINITIONS = {
 	// Strongly recommended
-	'claude-4.5-sonnet': {
-		name: 'claude-4.5-sonnet',
-		id: 'claude-sonnet-4-5',
-		provider: 'anthropic',
-	},
+	// 'claude-4.5-sonnet': {
+	// 	name: 'claude-4.5-sonnet',
+	// 	id: 'claude-sonnet-4-5',
+	// 	provider: 'anthropic',
+	// },
 
-	// Recommended
-	'claude-4-sonnet': {
-		name: 'claude-4-sonnet',
-		id: 'claude-sonnet-4-0',
-		provider: 'anthropic',
-	},
+	// // Recommended
+	// 'claude-4-sonnet': {
+	// 	name: 'claude-4-sonnet',
+	// 	id: 'claude-sonnet-4-0',
+	// 	provider: 'anthropic',
+	// },
 
-	// Recommended
-	'claude-3.5-sonnet': {
-		name: 'claude-3.5-sonnet',
-		id: 'claude-3-5-sonnet-latest',
-		provider: 'anthropic',
-	},
+	// // Recommended
+	// 'claude-3.5-sonnet': {
+	// 	name: 'claude-3.5-sonnet',
+	// 	id: 'claude-3-5-sonnet-latest',
+	// 	provider: 'anthropic',
+	// },
 
 	// Recommended
 	// 'gemini-2.5-flash': {
@@ -70,11 +70,11 @@ export const AGENT_MODEL_DEFINITIONS = {
 	// },
 
 	// Mildly recommended
-	// 'gpt-4.1': {
-	// 	name: 'gpt-4.1',
-	// 	id: 'gpt-4.1-2025-04-14',
-	// 	provider: 'openai',
-	// },
+	'gpt-4.1': {
+		name: 'gpt-4.1',
+		id: 'gpt-4.1-2025-04-14',
+		provider: 'openai',
+	},
 
 	// Mildly recommended
 	// 'gpt-4o': {
