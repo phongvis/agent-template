@@ -2,6 +2,7 @@ import {
 	Atom,
 	atom,
 	Box,
+	BoxModel,
 	Editor,
 	react,
 	RecordsDiff,
@@ -10,6 +11,7 @@ import {
 	TLRecord,
 	Vec,
 	VecModel,
+	isRecordsDiffEmpty,
 } from 'tldraw'
 import { AgentActionUtil } from '../../shared/actions/AgentActionUtil'
 import { AgentHelpers } from '../../shared/AgentHelpers'
@@ -33,6 +35,11 @@ import { Streaming } from '../../shared/types/Streaming'
 import { TodoItem } from '../../shared/types/TodoItem'
 import { AgentModelName, DEFAULT_MODEL_NAME } from '../../worker/models'
 import { $agentsAtom } from './agentsAtom'
+
+interface RadarCanvasContext {
+	promptId: string | null
+	promptMessage: string
+}
 
 export interface TldrawAgentOptions {
 	/** The editor to associate the agent with. */
@@ -79,6 +86,16 @@ export class TldrawAgent {
 	 * An atom containing the agent's chat history.
 	 */
 	$chatHistory = atom<ChatHistoryItem[]>('chatHistory', [])
+
+	/**
+	 * Whether the radar experience has any visual output to show.
+	 */
+	$radarHasVisuals = atom<boolean>('radarHasVisuals', false)
+
+	/**
+	 * Metadata for the prompt whose visuals are currently shown in the radar canvas.
+	 */
+	$radarCanvasContext = atom<RadarCanvasContext | null>('radarCanvasContext', null)
 
 	/**
 	 * An atom containing the position on the page where the current chat
@@ -565,6 +582,8 @@ export class TldrawAgent {
 		this.$contextItems.set([])
 		this.$todoList.set([])
 		this.$userActionHistory.set([])
+		this.$radarHasVisuals.set(false)
+		this.$radarCanvasContext.set(null)
 
 		const viewport = this.editor.getViewportPageBounds()
 		this.$chatHistory.set([])
@@ -721,14 +740,18 @@ export class TldrawAgent {
  */
 function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRequest }) {
 	const { editor } = agent
+	let promptId: string | null = null
+	const promptMessage = request.messages.join('\n')
 
 	// If the request is from the user, add it to chat history
 	if (request.type === 'user') {
+		promptId = createRadarId()
 		const promptHistoryItem: ChatHistoryItem = {
 			type: 'prompt',
-			message: request.messages.join('\n'),
+			message: promptMessage,
 			contextItems: request.contextItems,
 			selectedShapes: request.selectedShapes,
+			id: promptId,
 		}
 		agent.$chatHistory.update((prev) => [...prev, promptHistoryItem])
 	}
@@ -740,9 +763,10 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 
 	const requestPromise = (async () => {
 		const prompt = await agent.preparePrompt(request, helpers)
-		console.log('[Agent Prompt]', JSON.stringify(prompt, null, 2))
+		// console.log('[Agent Prompt]', JSON.stringify(prompt, null, 2))
 		let incompleteDiff: RecordsDiff<TLRecord> | null = null
 		const actionPromises: Promise<void>[] = []
+		let producedCanvasChange = false
 		try {
 			for await (const action of streamAgent({ prompt, signal })) {
 				if (cancelled) break
@@ -765,6 +789,9 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 
 						// Apply the action to the app and editor
 						const { diff, promise } = agent.act(transformedAction, helpers)
+						if (!isRecordsDiffEmpty(diff)) {
+							producedCanvasChange = true
+						}
 
 						if (promise) {
 							actionPromises.push(promise)
@@ -785,6 +812,13 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 				)
 			}
 			await Promise.all(actionPromises)
+			if (!cancelled && producedCanvasChange) {
+				agent.$radarHasVisuals.set(true)
+				agent.$radarCanvasContext.set({
+					promptId,
+					promptMessage,
+				})
+			}
 		} catch (e) {
 			if (e === 'Cancelled by user' || (e instanceof Error && e.name === 'AbortError')) {
 				return
@@ -799,6 +833,10 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 	}
 
 	return { promise: requestPromise, cancel }
+}
+
+function createRadarId() {
+	return `radar-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 /**

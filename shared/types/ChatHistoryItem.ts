@@ -17,6 +17,7 @@ export interface ChatHistoryPromptItem {
 	message: string
 	contextItems: ContextItem[]
 	selectedShapes: SimpleShape[]
+	id?: string
 }
 
 /**

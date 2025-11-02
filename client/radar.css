@@ -1,0 +1,296 @@
+.radar-root {
+	position: fixed;
+	inset: 0;
+	background: #f8fafc;
+	color: #0f172a;
+	font-family: 'Inter', sans-serif;
+}
+
+.radar-root--canvas {
+	background: #f8fafc;
+	color: #0f172a;
+}
+
+.radar-canvas-fallback {
+	position: absolute;
+	width: 0;
+	height: 0;
+	overflow: hidden;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.radar-canvas-fallback--active {
+	position: static;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.radar-chat-shell {
+	position: relative;
+	z-index: 2;
+	height: 100vh;
+	overflow-y: auto;
+	padding: 24px 18px 44px;
+	display: flex;
+	flex-direction: column;
+	gap: 32px;
+	max-width: 880px;
+	margin: 0 auto;
+}
+
+.radar-root--canvas .radar-chat-shell {
+	color: #e2e8f0;
+}
+
+.radar-experience {
+	display: flex;
+	flex-direction: column;
+	gap: 32px;
+	flex: 1;
+	min-height: 100%;
+}
+
+.radar-button {
+	appearance: none;
+	border: 1px solid rgba(148, 163, 184, 0.4);
+	background: rgba(37, 99, 235, 0.15);
+	color: #e0f2fe;
+	padding: 8px 14px;
+	border-radius: 999px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.radar-button:hover {
+	background: rgba(37, 99, 235, 0.3);
+	transform: translateY(-1px);
+}
+
+.radar-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.radar-conversation {
+	display: flex;
+	flex-direction: column;
+	gap: 36px;
+	flex: 1;
+	padding-bottom: 32px;
+}
+
+.radar-canvas-anchor {
+	position: relative;
+	margin-top: 16px;
+	align-self: flex-start;
+	width: 100%;
+	display: none;
+}
+
+.radar-canvas-anchor--visible {
+	display: block;
+}
+
+.radar-thread {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.radar-canvas-inline {
+	background: #ffffff;
+	border: 1px solid rgba(148, 163, 184, 0.5);
+	border-radius: 18px;
+	padding: 0;
+	overflow: hidden;
+	width: 100%;
+	position: relative;
+	margin-bottom: 24px;
+}
+
+.radar-canvas-inline--hidden {
+	display: none;
+}
+
+.radar-canvas-inline--visible {
+	display: block;
+	pointer-events: auto;
+}
+
+.radar-canvas-stage {
+	width: 100%;
+	height: 420px;
+	border-radius: 12px;
+	background: #ffffff;
+	overflow: hidden;
+}
+
+.radar-message {
+	color: #0f172a;
+	max-width: min(620px, 90%);
+	padding: 14px 18px;
+	border-radius: 18px;
+	line-height: 1.5;
+	font-size: 15px;
+	box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+}
+
+.radar-message p {
+	margin: 0;
+}
+.radar-message p + p {
+	margin-top: 8px;
+}
+
+.radar-message--user {
+	align-self: flex-end;
+	background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(14, 165, 233, 0.75));
+	color: #f8fafc;
+}
+
+.radar-message--agent {
+	align-self: flex-start;
+	background: rgba(15, 23, 42, 0.8);
+	border: 1px solid rgba(148, 163, 184, 0.2);
+	color: #e2e8f0;
+}
+
+.radar-visual-gallery {
+	display: grid;
+	gap: 16px;
+}
+
+.radar-visual-placeholder {
+	background: rgba(15, 23, 42, 0.6);
+	border: 1px dashed rgba(148, 163, 184, 0.25);
+	border-radius: 16px;
+	padding: 18px;
+	color: rgba(148, 163, 184, 0.75);
+	font-size: 13px;
+}
+
+.radar-visual-card {
+	background: rgba(15, 23, 42, 0.82);
+	border: 1px solid rgba(148, 163, 184, 0.25);
+	border-radius: 18px;
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	color: #e2e8f0;
+}
+
+.radar-visual-meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: 12px;
+	color: rgba(148, 163, 184, 0.8);
+}
+
+.radar-snapshot {
+	width: 100%;
+	height: auto;
+	border-radius: 12px;
+	background: rgba(148, 163, 184, 0.08);
+	border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.radar-snapshot--empty {
+	width: 100%;
+	min-height: 180px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px dashed rgba(148, 163, 184, 0.3);
+	color: rgba(148, 163, 184, 0.8);
+	font-size: 14px;
+}
+
+.radar-prompt-form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	background: #e2e8f0;
+	border: 1px solid rgba(100, 116, 139, 0.3);
+	border-radius: 18px;
+	margin-top: 28px;
+	position: static;
+	color: #0f172a;
+}
+
+.radar-prompt-form textarea {
+	width: 100%;
+	border: none;
+	border-radius: 12px;
+	padding: 12px 14px;
+	background: #f8fafc;
+	color: #0f172a;
+	font-size: 14px;
+	line-height: 1.4;
+	resize: vertical;
+	min-height: 96px;
+	max-height: 220px;
+}
+
+.radar-prompt-form textarea:focus {
+	outline: 2px solid rgba(37, 99, 235, 0.45);
+}
+
+.radar-prompt-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.radar-prompt-meta {
+	font-size: 12px;
+	color: rgba(148, 163, 184, 0.7);
+}
+
+.radar-model-label {
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: rgba(37, 99, 235, 0.18);
+	border: 1px solid rgba(37, 99, 235, 0.28);
+}
+
+.radar-canvas-stage .tlui-navigation-panel,
+.radar-canvas-stage .tlui-page-menu,
+.radar-canvas-stage .tlui-help-menu,
+.radar-canvas-stage .tlui-scale-panel,
+.radar-canvas-stage .tlui-minimap,
+.radar-canvas-stage .tlui-menu-zone {
+	display: none !important;
+}
+
+.radar-canvas-inline .tlui-buttons__dock {
+	position: absolute;
+	bottom: 16px;
+	right: 16px;
+	display: flex !important;
+	opacity: 1 !important;
+	transform: none !important;
+	transition: none !important;
+}
+
+.radar-canvas-inline .tlui-toolbar {
+	display: none !important;
+}
+
+@media (max-width: 768px) {
+	.radar-chat-shell {
+		padding: 18px 12px 36px;
+	}
+
+	.radar-message {
+		max-width: 100%;
+	}
+}
