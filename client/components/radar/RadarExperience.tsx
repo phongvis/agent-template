@@ -152,7 +152,6 @@ function RadarPromptForm({ agent }: { agent: TldrawAgent }) {
 				ref={textareaRef}
 				value={value}
 				onChange={(event) => setValue(event.currentTarget.value)}
-				placeholder="Ask the canvas what to draw"
 				autoComplete="off"
 				rows={3}
 				onKeyDown={(event) => {
@@ -164,7 +163,6 @@ function RadarPromptForm({ agent }: { agent: TldrawAgent }) {
 			/>
 			<div className="radar-prompt-actions">
 				<div className="radar-prompt-meta">
-					<span className="radar-model-label">{modelName}</span>
 				</div>
 				<button type="submit" className="radar-button" disabled={value.trim() === '' && !isGenerating}>
 					{isGenerating && value.trim() === '' ? 'Stop' : 'Send'}
