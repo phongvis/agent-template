@@ -88,11 +88,11 @@ function RadarThread({
 }) {
 	const actionSummaries = useMemo(() => {
 		return section.items
-			.filter((item): item is ChatHistoryActionItem => item.type === 'action')
+			.filter((item): item is ChatHistoryActionItem => item.type === 'action' && item.action._type === 'message')
 			.map((item) => getActionInfo(item.action, agent))
 			.map((info) => info.description)
 			.filter((value): value is string => Boolean(value))
-	}, [section.items, agent])
+	}, [section.items, agent, showCanvas])
 
 	return (
 		<section className="radar-thread">

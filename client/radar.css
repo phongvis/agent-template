@@ -258,36 +258,10 @@
 .radar-canvas-stage .tlui-help-menu,
 .radar-canvas-stage .tlui-scale-panel,
 .radar-canvas-stage .tlui-minimap,
-.radar-canvas-stage .tlui-menu-zone {
-	display: none !important;
-}
-
+.radar-canvas-stage .tlui-menu-zone,
+.radar-canvas-stage .tlui-main-toolbar__extras,
 .radar-canvas-inline .tlui-style-panel {
 	display: none !important;
-}
-
-.radar-canvas-inline .tlui-buttons__dock {
-	position: absolute;
-	bottom: 16px;
-	right: 16px;
-	display: flex !important;
-	opacity: 1 !important;
-	transform: none !important;
-	transition: none !important;
-}
-
-.radar-canvas-inline .tlui-toolbar {
-	position: absolute;
-	top: 50%;
-	left: 16px;
-	display: flex !important;
-	flex-direction: column;
-	gap: 8px;
-	opacity: 1 !important;
-	transform: translateY(-50%) !important;
-	transition: none !important;
-	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-	border-radius: 14px;
 }
 
 @media (max-width: 768px) {
