@@ -20,6 +20,7 @@ export function RadarExperience({
 	const history = useValue(agent.$chatHistory)
 	const sections = useMemo(() => getAgentHistorySections(history), [history])
 	const canvasContext = useValue(agent.$radarCanvasContext)
+	const conversationRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
 		if (!canvasVisible) {
@@ -31,6 +32,12 @@ export function RadarExperience({
 		return () => onCanvasHostMount(null)
 	}, [onCanvasHostMount])
 
+	useEffect(() => {
+		if (conversationRef.current) {
+			conversationRef.current.scrollTop = conversationRef.current.scrollHeight
+		}
+	}, [sections])
+
 	const canvasAnchorRef = useCallback(
 		(node: HTMLDivElement | null) => {
 			onCanvasHostMount(node)
@@ -40,7 +47,7 @@ export function RadarExperience({
 
 	return (
 		<div className="radar-experience">
-			<div className="radar-conversation">
+			<div className="radar-conversation" ref={conversationRef}>
 				{sections.map((section, index) => {
 					const isCanvasSection = Boolean(
 						canvasVisible &&
