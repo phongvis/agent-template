@@ -23,6 +23,7 @@ import { AgentInput } from '../../shared/types/AgentInput'
 import { AgentPrompt, BaseAgentPrompt } from '../../shared/types/AgentPrompt'
 import { AgentRequest } from '../../shared/types/AgentRequest'
 import { ChatHistoryItem } from '../../shared/types/ChatHistoryItem'
+import { ChatHistoryReferenceItem } from '../../shared/types/ChatHistoryItem'
 import {
 	AreaContextItem,
 	ContextItem,
@@ -584,6 +585,8 @@ export class TldrawAgent {
 		this.$userActionHistory.set([])
 		this.$radarHasVisuals.set(false)
 		this.$radarCanvasContext.set(null)
+		this.lastCapturedContextKey = null
+		this.clearPendingReferenceState()
 
 		const viewport = this.editor.getViewportPageBounds()
 		this.$chatHistory.set([])
@@ -602,6 +605,212 @@ export class TldrawAgent {
 	 * This flag is used to prevent agent actions from being recorded as user actions.
 	 */
 	private isActing = false
+
+	/**
+	 * Track the canvas context we've already captured so we don't duplicate snapshots.
+	 */
+	private lastCapturedContextKey: string | null = null
+	private pendingReference: ChatHistoryReferenceItem | null = null
+	private pendingReferenceContextKey: string | null = null
+	private pendingReferenceUndoDiff: RecordsDiff<TLRecord> | null = null
+	private pendingReferencePreviousContext: RadarCanvasContext | null = null
+	private pendingReferenceHadVisuals = false
+	private pendingReferenceNeedsReset = false
+
+
+	private getCurrentCanvasContextKey() {
+		const context = this.$radarCanvasContext.get()
+		if (!context) return null
+		return context.promptId ?? (context.promptMessage ? `message:${context.promptMessage}` : null)
+	}
+
+	private async createCanvasReferenceSnapshot(): Promise<
+		{ item: ChatHistoryReferenceItem; contextKey: string } | null
+	> {
+		if (!this.$radarHasVisuals.get()) return null
+		const shapes = this.editor.getCurrentPageShapeIds()
+		if (shapes.size === 0) return null
+
+		const context = this.$radarCanvasContext.get()
+		if (!context) return null
+		const contextKey = this.getCurrentCanvasContextKey()
+		if (!contextKey) return null
+		if (this.lastCapturedContextKey === contextKey) return null
+		if (this.pendingReferenceContextKey === contextKey) return null
+
+		try {
+			const svgResult = await this.editor.getSvgString([...shapes], {
+				padding: 48,
+				background: true,
+			})
+			const svgContent = typeof svgResult === 'string' ? svgResult : svgResult?.svg
+			if (!svgContent) return null
+
+			const dataUrl = `data:image/svg+xml,${encodeURIComponent(svgContent)}`
+			const reference: ChatHistoryReferenceItem = {
+				type: 'reference',
+				id: createReferenceId(),
+				title: 'Previous canvas snapshot',
+				description: context.promptMessage
+					? `Result of “${context.promptMessage}”`
+					: `Captured ${new Date().toLocaleString()}`,
+				image: {
+					kind: 'svg',
+					data: dataUrl,
+				},
+			}
+
+			return { item: reference, contextKey }
+		} catch (error) {
+			console.warn('Failed to capture canvas reference snapshot', error)
+			return null
+		}
+	}
+
+	private resetCanvasForNewRun() {
+		const previousContext = this.$radarCanvasContext.get()
+		const previousHasVisuals = this.$radarHasVisuals.get()
+		const shapeIds = Array.from(this.editor.getCurrentPageShapeIds())
+
+		let undoDiff: RecordsDiff<TLRecord> | null = null
+		if (shapeIds.length > 0) {
+			this.isActing = true
+			try {
+				undoDiff = this.editor.store.extractingChanges(() => {
+					this.editor.deleteShapes(shapeIds)
+					this.editor.selectNone()
+				})
+			} finally {
+				this.isActing = false
+			}
+		}
+
+		this.pendingReferenceUndoDiff = undoDiff
+		this.pendingReferencePreviousContext = previousContext
+		this.pendingReferenceHadVisuals = previousHasVisuals
+		this.$radarHasVisuals.set(false)
+		this.$radarCanvasContext.set(null)
+	}
+
+	async ensureFreshCanvasForAction(actionType: AgentAction['_type'] | undefined) {
+		if (!this.shouldPrepareFreshCanvas(actionType)) return
+		const snapshot = await this.createCanvasReferenceSnapshot()
+		if (!snapshot) return
+		this.pendingReference = snapshot.item
+		this.pendingReferenceContextKey = snapshot.contextKey
+		this.pendingReferenceNeedsReset = true
+	}
+
+	applyPendingReferenceResetIfNeeded(diff: RecordsDiff<TLRecord>) {
+		if (!this.pendingReferenceNeedsReset) return
+		if (isRecordsDiffEmpty(diff)) {
+			this.clearPendingReferenceState()
+			return
+		}
+
+		const inverse = reverseRecordsDiff(diff)
+		this.isActing = true
+		try {
+			this.editor.store.applyDiff(inverse)
+		} finally {
+			this.isActing = false
+		}
+
+		this.resetCanvasForNewRun()
+
+		this.isActing = true
+		try {
+			this.editor.store.applyDiff(diff)
+		} finally {
+			this.isActing = false
+		}
+
+		this.pendingReferenceNeedsReset = false
+	}
+
+	cancelPendingReferenceResetIfNeeded() {
+		if (!this.pendingReferenceNeedsReset) return
+		this.clearPendingReferenceState()
+	}
+
+	private shouldPrepareFreshCanvas(actionType: AgentAction['_type'] | undefined) {
+		const resolvedType = actionType ?? 'unknown'
+		if (!this.actionMutatesCanvas(resolvedType)) return false
+		if (!this.$radarHasVisuals.get()) return false
+		if (this.editor.getCurrentPageShapeIds().size === 0) return false
+		const contextKey = this.getCurrentCanvasContextKey()
+		if (!contextKey) return false
+		if (this.lastCapturedContextKey === contextKey) return false
+		if (this.pendingReferenceContextKey === contextKey) return false
+		if (this.pendingReference) return false
+		return true
+	}
+
+	commitPendingReference() {
+		const reference = this.pendingReference
+		const contextKey = this.pendingReferenceContextKey
+		if (!reference || !contextKey) return
+		this.$chatHistory.update((items) => {
+			const insertionIndex = this.findReferenceInsertionIndex(items, contextKey)
+			if (insertionIndex === -1) {
+				return [...items, reference]
+			}
+			const nextItems = items.slice()
+			nextItems.splice(insertionIndex, 0, reference)
+			return nextItems
+		})
+		this.lastCapturedContextKey = contextKey
+		this.clearPendingReferenceState()
+	}
+
+	private findReferenceInsertionIndex(items: ChatHistoryItem[], contextKey: string) {
+		let currentContextKey: string | null = null
+		let lastTargetIndex = -1
+		for (let index = 0; index < items.length; index++) {
+			const item = items[index]
+			if (item.type === 'prompt') {
+				currentContextKey = item.id ?? (item.message ? `message:${item.message}` : null)
+			}
+			if (currentContextKey === contextKey) {
+				lastTargetIndex = index
+			}
+		}
+		return lastTargetIndex === -1 ? -1 : lastTargetIndex + 1
+	}
+
+	restorePendingReferenceIfNeeded() {
+		if (!this.pendingReference) return
+		if (this.pendingReferenceUndoDiff) {
+			const inverse = reverseRecordsDiff(this.pendingReferenceUndoDiff)
+			this.isActing = true
+			try {
+				this.editor.store.applyDiff(inverse)
+				this.editor.selectNone()
+			} finally {
+				this.isActing = false
+			}
+		}
+		if (this.pendingReferencePreviousContext) {
+			this.$radarCanvasContext.set(this.pendingReferencePreviousContext)
+		}
+		if (this.pendingReferenceHadVisuals) {
+			this.$radarHasVisuals.set(true)
+		}
+		this.clearPendingReferenceState()
+	}
+
+	private clearPendingReferenceState() {
+		this.pendingReference = null
+		this.pendingReferenceContextKey = null
+		this.pendingReferenceUndoDiff = null
+		this.pendingReferencePreviousContext = null
+		this.pendingReferenceHadVisuals = false
+		this.pendingReferenceNeedsReset = false
+	}
+
+	private actionMutatesCanvas(actionType: AgentAction['_type']) {
+		return !NON_CANVAS_ACTION_TYPES.has(actionType)
+	}
 
 	/**
 	 * Start recording user actions.
@@ -770,6 +979,7 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 		try {
 			for await (const action of streamAgent({ prompt, signal })) {
 				if (cancelled) break
+				await agent.ensureFreshCanvasForAction(action._type)
 				editor.run(
 					() => {
 						const actionUtil = agent.getAgentActionUtil(action._type)
@@ -777,6 +987,7 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 						// helpers the agent's action
 						const transformedAction = actionUtil.sanitizeAction(action, helpers)
 						if (!transformedAction) {
+							agent.cancelPendingReferenceResetIfNeeded()
 							incompleteDiff = null
 							return
 						}
@@ -789,6 +1000,7 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 
 						// Apply the action to the app and editor
 						const { diff, promise } = agent.act(transformedAction, helpers)
+						agent.applyPendingReferenceResetIfNeeded(diff)
 						if (!isRecordsDiffEmpty(diff)) {
 							producedCanvasChange = true
 						}
@@ -812,18 +1024,22 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 				)
 			}
 			await Promise.all(actionPromises)
-			if (!cancelled && producedCanvasChange) {
-				agent.$radarHasVisuals.set(true)
-				agent.$radarCanvasContext.set({
-					promptId,
-					promptMessage,
-				})
-			}
 		} catch (e) {
 			if (e === 'Cancelled by user' || (e instanceof Error && e.name === 'AbortError')) {
 				return
 			}
 			agent.onError(e)
+		} finally {
+			if (!cancelled && producedCanvasChange) {
+				agent.commitPendingReference()
+				agent.$radarHasVisuals.set(true)
+				agent.$radarCanvasContext.set({
+					promptId,
+					promptMessage,
+				})
+			} else {
+				agent.restorePendingReferenceIfNeeded()
+			}
 		}
 	})()
 
@@ -838,6 +1054,23 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 function createRadarId() {
 	return `radar-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
+
+function createReferenceId() {
+	return `reference-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+const NON_CANVAS_ACTION_TYPES = new Set<AgentAction['_type']>([
+	'message',
+	'think',
+	'review',
+	'add-detail',
+	'update-todo-list',
+	'setMyView',
+	'getInspiration',
+	'countryInfo',
+	'count',
+	'unknown',
+])
 
 /**
  * Stream a response from the model.

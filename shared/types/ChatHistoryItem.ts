@@ -8,6 +8,7 @@ export type ChatHistoryItem =
 	| ChatHistoryActionItem
 	| ChatHistoryPromptItem
 	| ChatHistoryContinuationItem
+	| ChatHistoryReferenceItem
 
 /**
  * A prompt from the user.
@@ -36,4 +37,18 @@ export interface ChatHistoryActionItem {
 export interface ChatHistoryContinuationItem {
 	type: 'continuation'
 	data: JsonValue[]
+}
+
+/**
+ * A frozen snapshot of the canvas preserved for reference.
+ */
+export interface ChatHistoryReferenceItem {
+	type: 'reference'
+	id: string
+	title: string
+	description?: string
+	image?: {
+		kind: 'data-url' | 'svg'
+		data: string
+	}
 }

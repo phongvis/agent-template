@@ -4,9 +4,10 @@ import { useValue } from 'tldraw'
 import { convertTldrawShapeToSimpleShape } from '../../../shared/format/convertTldrawShapeToSimpleShape'
 import { SimpleShape } from '../../../shared/format/SimpleShape'
 import { TldrawAgent } from '../../agent/TldrawAgent'
-import { ChatHistoryActionItem } from '../../../shared/types/ChatHistoryItem'
+import { ChatHistoryActionItem, ChatHistoryReferenceItem } from '../../../shared/types/ChatHistoryItem'
 import { getAgentHistorySections } from '../chat-history/ChatHistorySection'
 import { getActionInfo } from '../chat-history/getActionInfo'
+import { ChatHistoryReferenceCard } from '../chat-history/ChatHistoryReferencePlaceholder'
 
 export function RadarExperience({
 	agent,
@@ -94,6 +95,10 @@ function RadarThread({
 			.filter((value): value is string => Boolean(value))
 	}, [section.items, agent, showCanvas])
 
+	const references = useMemo(() => {
+		return section.items.filter((item): item is ChatHistoryReferenceItem => item.type === 'reference')
+	}, [section.items])
+
 	return (
 		<section className="radar-thread">
 			<div className="radar-message radar-message--user">
@@ -103,6 +108,13 @@ function RadarThread({
 				<div className="radar-message radar-message--agent">
 					{actionSummaries.map((description, idx) => (
 						<Markdown key={`summary-${sectionIndex}-${idx}`}>{description}</Markdown>
+					))}
+				</div>
+			)}
+			{references.length > 0 && (
+				<div className="radar-reference-list">
+					{references.map((reference) => (
+						<ChatHistoryReferenceCard key={reference.id} item={reference} />
 					))}
 				</div>
 			)}
@@ -169,8 +181,7 @@ function RadarPromptForm({ agent }: { agent: TldrawAgent }) {
 				}}
 			/>
 			<div className="radar-prompt-actions">
-				<div className="radar-prompt-meta">
-				</div>
+				<div className="radar-prompt-meta" />
 				<button type="submit" className="radar-button" disabled={value.trim() === '' && !isGenerating}>
 					{isGenerating && value.trim() === '' ? 'Stop' : 'Send'}
 				</button>
