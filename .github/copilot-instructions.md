@@ -6,7 +6,7 @@
 
 ## Core Architecture
 - `client/` hosts the React/tldraw UI; `worker/` is a Cloudflare worker with a Durable Object; `shared/` contains prompt/action utilities reused on both sides.
-- `client/app-radar.tsx` is the primary entry: the canvas renders inline with the threaded chat so users see drawings in context instead of a split chat/canvas layout.
+- `client/App.tsx` is the primary entry: the canvas renders inline with the threaded chat so users see drawings in context instead of a split chat/canvas layout.
 - `client/components/radar/RadarExperience.tsx` handles the conversation UI, in-thread canvas host, and prompt form controls.
 - `client/agent/TldrawAgent.ts` is the orchestrator: tracks chat state in atoms, prepares prompts, streams actions, persists context in `localStorage`.
 - `worker/do/AgentDurableObject.ts` keeps one `AgentService` instance per room; it streams AI actions as Server-Sent Events consumed by the client `streamAgent` iterator.
@@ -34,9 +34,7 @@
 
 ## UI Hooks & Extending UX
 - `client/components/radar/RadarExperience.tsx` drives the inline chat + canvas flow; extending UX typically means adjusting its thread rendering or prompt form while keeping `TldrawAgent` atoms as the source of truth.
-- Legacy `client/components/ChatPanel` still exists for the split-pane demo but is no longer the focus of new work.
 - Highlight overlays (`components/highlights`) read `$activeRequest` to visualize agent focus; follow that pattern for additional debugging UI.
-- Custom helper buttons live in `components/CustomHelperButtons.tsx` and call `agent.schedule` / `agent.reset`; reuse them to expose new agent shortcuts.
 
 ## Worker Details & Deploy
 - `AgentService` picks a provider via `AGENT_MODEL_DEFINITIONS`; extend the map and ensure the relevant SDK provider is configured with an API key.
