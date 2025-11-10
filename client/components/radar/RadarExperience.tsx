@@ -33,12 +33,6 @@ export function RadarExperience({
 		return () => onCanvasHostMount(null)
 	}, [onCanvasHostMount])
 
-	useEffect(() => {
-		if (conversationRef.current) {
-			conversationRef.current.scrollTop = conversationRef.current.scrollHeight
-		}
-	}, [sections])
-
 	const canvasAnchorRef = useCallback(
 		(node: HTMLDivElement | null) => {
 			onCanvasHostMount(node)
