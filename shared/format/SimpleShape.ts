@@ -4,6 +4,7 @@ import { SimpleFillSchema } from './SimpleFill'
 import { SimpleFontSize } from './SimpleFontSize'
 import { SimpleGeoShapeTypeSchema } from './SimpleGeoShapeType'
 import { BAR_CHART_SHAPE_TYPE } from '../shapes/BarChartShape'
+import { TREE_SHAPE_TYPE } from '../shapes/TreeShape'
 
 const SimpleLabel = z.string()
 
@@ -162,6 +163,60 @@ const SimpleBarChartShape = z
 
 export type SimpleBarChartShape = z.infer<typeof SimpleBarChartShape>
 
+const SimpleTreeEndpoint = z.object({
+	relativeX: z.number(),
+	relativeY: z.number(),
+})
+
+const SimpleTreeLink = z.object({
+	sourceId: z.string(),
+	targetId: z.string(),
+	source: SimpleTreeEndpoint,
+	target: SimpleTreeEndpoint,
+})
+
+const SimpleTreeNode = z.object({
+	nodeId: z.string(),
+	label: z.string(),
+	parentId: z.string().nullable(),
+	depth: z.number(),
+	relativeX: z.number(),
+	relativeY: z.number(),
+	hasChildren: z.boolean(),
+	color: z.string().optional(),
+})
+
+const SimpleTreeShape = z
+	.object({
+		_type: z.literal(TREE_SHAPE_TYPE),
+		note: z.string(),
+		shapeId: z.string(),
+		name: z.string().optional(),
+		x: z.number(),
+		y: z.number(),
+		w: z.number(),
+		h: z.number(),
+		orientation: z.enum(['vertical', 'horizontal']).default('horizontal'),
+		nodeRadius: z.number(),
+		separation: z.number(),
+		cousinSeparation: z.number(),
+		margins: z.object({
+			top: z.number(),
+			right: z.number(),
+			bottom: z.number(),
+			left: z.number(),
+		}),
+		nodes: z.array(SimpleTreeNode),
+		links: z.array(SimpleTreeLink),
+	})
+	.meta({
+		title: 'Tree Diagram Shape',
+		description:
+			'A hierarchical tree diagram showing parent-child relationships. Nodes include their relative position within the rendered diagram so the model can reason about structure, spacing, and depth when editing or adding branches.',
+	})
+
+export type SimpleTreeShape = z.infer<typeof SimpleTreeShape>
+
 const SIMPLE_SHAPES = [
 	SimpleDrawShape,
 	SimpleGeoShape,
@@ -170,6 +225,7 @@ const SIMPLE_SHAPES = [
 	SimpleArrowShape,
 	SimpleNoteShape,
 	SimpleBarChartShape,
+	SimpleTreeShape,
 	SimpleUnknownShape,
 ] as const
 export const SimpleShapeSchema = z.union(SIMPLE_SHAPES)

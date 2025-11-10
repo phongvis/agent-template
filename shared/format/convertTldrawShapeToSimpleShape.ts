@@ -20,6 +20,11 @@ import {
 	computeBarChartLayout,
 	ensureBarIds,
 } from '../shapes/BarChartShape'
+import {
+	TREE_SHAPE_TYPE,
+	TLTreeShape,
+	computeTreeLayout,
+} from '../shapes/TreeShape'
 import { convertTldrawFillToSimpleFill } from './SimpleFill'
 import { convertTldrawFontSizeAndScaleToSimpleFontSize } from './SimpleFontSize'
 import { SimpleGeoShapeType } from './SimpleGeoShapeType'
@@ -33,6 +38,7 @@ import {
 	SimpleShape,
 	SimpleTextShape,
 	SimpleUnknownShape,
+	SimpleTreeShape,
 } from './SimpleShape'
 
 /**
@@ -54,6 +60,8 @@ export function convertTldrawShapeToSimpleShape(editor: Editor, shape: TLShape):
 			return convertDrawShapeToSimple(editor, shape as TLDrawShape)
 		case BAR_CHART_SHAPE_TYPE:
 			return convertBarChartShapeToSimple(editor, shape as TLBarChartShape)
+		case TREE_SHAPE_TYPE:
+			return convertTreeShapeToSimple(editor, shape as TLTreeShape)
 		default:
 			return convertUnknownShapeToSimple(editor, shape)
 	}
@@ -73,6 +81,8 @@ export function convertTldrawShapeToSimpleType(shape: TLShape): SimpleShape['_ty
 			return shape.type
 		case BAR_CHART_SHAPE_TYPE:
 			return BAR_CHART_SHAPE_TYPE
+		case TREE_SHAPE_TYPE:
+			return TREE_SHAPE_TYPE
 		default:
 			return 'unknown'
 	}
@@ -151,6 +161,52 @@ function convertBarChartShapeToSimple(editor: Editor, shape: TLBarChartShape): S
 		ticks: layout.ticks.map((tick) => ({
 			value: tick.value,
 			relativeYFromBase: Number(tick.relativeYFromBase.toFixed(4)),
+		})),
+	}
+}
+
+function convertTreeShapeToSimple(editor: Editor, shape: TLTreeShape): SimpleTreeShape {
+	const bounds = getSimpleBounds(editor, shape)
+	const layout = computeTreeLayout(shape.props)
+	return {
+		_type: TREE_SHAPE_TYPE,
+		note: (shape.meta.note as string) ?? '',
+		shapeId: convertTldrawIdToSimpleId(shape.id),
+		x: bounds.x,
+		y: bounds.y,
+		w: shape.props.w,
+		h: shape.props.h,
+		orientation: layout.orientation,
+		nodeRadius: shape.props.nodeRadius,
+		separation: shape.props.separation,
+		cousinSeparation: shape.props.cousinSeparation,
+		margins: {
+			top: shape.props.marginTop,
+			right: shape.props.marginRight,
+			bottom: shape.props.marginBottom,
+			left: shape.props.marginLeft,
+		},
+		nodes: layout.nodes.map((node) => ({
+			nodeId: node.nodeId,
+			label: node.label,
+			parentId: node.parentId,
+			depth: node.depth,
+			relativeX: Number(node.relativeX.toFixed(4)),
+			relativeY: Number(node.relativeY.toFixed(4)),
+			hasChildren: node.hasChildren,
+			color: node.color,
+		})),
+		links: layout.links.map((link) => ({
+			sourceId: link.sourceId,
+			targetId: link.targetId,
+			source: {
+				relativeX: Number(link.source.relativeX.toFixed(4)),
+				relativeY: Number(link.source.relativeY.toFixed(4)),
+			},
+			target: {
+				relativeX: Number(link.target.relativeX.toFixed(4)),
+				relativeY: Number(link.target.relativeY.toFixed(4)),
+			},
 		})),
 	}
 }

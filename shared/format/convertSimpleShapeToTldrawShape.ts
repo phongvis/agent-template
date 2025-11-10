@@ -33,6 +33,7 @@ import {
 	SimpleShape,
 	SimpleTextShape,
 	SimpleUnknownShape,
+	SimpleTreeShape,
 } from './SimpleShape'
 import {
 	BAR_CHART_DEFAULT_PROPS,
@@ -41,6 +42,12 @@ import {
 	TLBarChartShape,
 	ensureBarIds,
 } from '../shapes/BarChartShape'
+import {
+	TREE_SHAPE_TYPE,
+	TLTreeShape,
+	createDefaultTreeProps,
+	normalizeTreeNodes,
+} from '../shapes/TreeShape'
 
 /**
  * Convert a SimpleShape to a shape object to a tldraw shape using defaultShape for fallback values
@@ -94,6 +101,9 @@ export function convertSimpleShapeToTldrawShape(
 		}
 		case BAR_CHART_SHAPE_TYPE: {
 			return convertBarChartShapeToTldrawShape(editor, simpleShape, { defaultShape })
+		}
+		case TREE_SHAPE_TYPE: {
+			return convertTreeShapeToTldrawShape(editor, simpleShape, { defaultShape })
 		}
 		case 'unknown': {
 			return convertUnknownShapeToTldrawShape(editor, simpleShape, { defaultShape })
@@ -607,6 +617,66 @@ function convertBarChartShapeToTldrawShape(
 				marginLeft: margins.left,
 				tickCount: baseProps.tickCount ?? BAR_CHART_DEFAULT_TICK_COUNT,
 				maxValue: simpleShape.maxValue ?? baseProps.maxValue,
+			},
+			meta: {
+				...(existingShape?.meta ?? {}),
+				note: simpleShape.note ?? existingShape?.meta?.note ?? '',
+			},
+		},
+	}
+}
+
+function convertTreeShapeToTldrawShape(
+	editor: Editor,
+	simpleShape: SimpleTreeShape,
+	{ defaultShape }: { defaultShape: Partial<TLShape> }
+): { shape: TLShape } {
+	const shapeId = convertSimpleIdToTldrawId(simpleShape.shapeId)
+	const existingShape = defaultShape as TLTreeShape | undefined
+	const baseProps = existingShape?.props ?? createDefaultTreeProps()
+	const margins = simpleShape.margins ?? {
+		top: baseProps.marginTop,
+		right: baseProps.marginRight,
+		bottom: baseProps.marginBottom,
+		left: baseProps.marginLeft,
+	}
+
+	const orientation = simpleShape.orientation === 'vertical' ? 'vertical' : 'horizontal'
+
+	const nodes = normalizeTreeNodes(
+		simpleShape.nodes.map((node, index) => ({
+			id: node.nodeId || `node-${index + 1}`,
+			label: node.label,
+			parentId: node.parentId ?? undefined,
+			color: node.color,
+		}))
+	)
+
+	return {
+		shape: {
+			id: shapeId,
+			type: TREE_SHAPE_TYPE,
+			typeName: 'shape',
+			x: simpleShape.x ?? existingShape?.x ?? 0,
+			y: simpleShape.y ?? existingShape?.y ?? 0,
+			rotation: existingShape?.rotation ?? 0,
+			index: existingShape?.index ?? ('a1' as IndexKey),
+			parentId: existingShape?.parentId ?? editor.getCurrentPageId(),
+			isLocked: existingShape?.isLocked ?? false,
+			opacity: existingShape?.opacity ?? 1,
+			props: {
+				...baseProps,
+				w: simpleShape.w ?? baseProps.w,
+				h: simpleShape.h ?? baseProps.h,
+				nodes,
+				marginTop: margins.top,
+				marginRight: margins.right,
+				marginBottom: margins.bottom,
+				marginLeft: margins.left,
+				orientation,
+				nodeRadius: simpleShape.nodeRadius ?? baseProps.nodeRadius,
+				separation: simpleShape.separation ?? baseProps.separation,
+				cousinSeparation: simpleShape.cousinSeparation ?? baseProps.cousinSeparation,
 			},
 			meta: {
 				...(existingShape?.meta ?? {}),

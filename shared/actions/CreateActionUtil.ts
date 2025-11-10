@@ -12,6 +12,7 @@ import {
 	BAR_CHART_SHAPE_TYPE,
 	createDefaultBarChartProps,
 } from '../shapes/BarChartShape'
+import { TREE_SHAPE_TYPE, createDefaultTreeProps } from '../shapes/TreeShape'
 
 const CreateAction = z
 	.object({
@@ -92,6 +93,12 @@ function getDefaultShape(shapeType: SimpleShape['_type']) {
 		return {
 			...SHARED_DEFAULTS,
 			props: createDefaultBarChartProps(),
+		}
+	}
+	if (shapeType === TREE_SHAPE_TYPE) {
+		return {
+			...SHARED_DEFAULTS,
+			props: createDefaultTreeProps(),
 		}
 	}
 	const isGeo = shapeType in SIMPLE_TO_GEO_TYPES

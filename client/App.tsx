@@ -18,6 +18,7 @@ import { AgentViewportBoundsHighlight } from './components/highlights/AgentViewp
 import { ContextHighlights } from './components/highlights/ContextHighlights'
 import { enableLinedFillStyle } from './enableLinedFillStyle'
 import { BarChartShapeUtil } from './shapes/BarChartShapeUtil'
+import { TreeShapeUtil } from './shapes/TreeShapeUtil'
 import { TargetAreaTool } from './tools/TargetAreaTool'
 import { TargetShapeTool } from './tools/TargetShapeTool'
 import './radar.css'
@@ -90,7 +91,7 @@ function App() {
 		}
 	}, [agent])
 
-	const shapeUtils = useMemo(() => [BarChartShapeUtil], [])
+	const shapeUtils = useMemo(() => [BarChartShapeUtil, TreeShapeUtil], [])
 
 	const rootClassName = canvasVisible ? 'radar-root radar-root--canvas' : 'radar-root'
 
