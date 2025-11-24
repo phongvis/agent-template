@@ -196,7 +196,6 @@ const SimpleTreeShape = z
 		y: z.number(),
 		w: z.number(),
 		h: z.number(),
-		orientation: z.enum(['vertical', 'horizontal']).default('horizontal'),
 		nodeRadius: z.number(),
 		separation: z.number(),
 		cousinSeparation: z.number(),

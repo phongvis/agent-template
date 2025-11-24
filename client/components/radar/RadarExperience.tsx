@@ -33,6 +33,12 @@ export function RadarExperience({
 		return () => onCanvasHostMount(null)
 	}, [onCanvasHostMount])
 
+	useEffect(() => {
+		if (conversationRef.current) {
+			conversationRef.current.scrollTop = conversationRef.current.scrollHeight
+		}
+	}, [sections])
+
 	const canvasAnchorRef = useCallback(
 		(node: HTMLDivElement | null) => {
 			onCanvasHostMount(node)
@@ -83,7 +89,7 @@ function RadarThread({
 }) {
 	const actionSummaries = useMemo(() => {
 		return section.items
-			.filter((item): item is ChatHistoryActionItem => item.type === 'action' && item.action._type === 'message')
+			.filter((item): item is ChatHistoryActionItem => item.type === 'action')
 			.map((item) => getActionInfo(item.action, agent))
 			.map((info) => info.description)
 			.filter((value): value is string => Boolean(value))

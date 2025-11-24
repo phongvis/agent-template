@@ -176,7 +176,6 @@ function convertTreeShapeToSimple(editor: Editor, shape: TLTreeShape): SimpleTre
 		y: bounds.y,
 		w: shape.props.w,
 		h: shape.props.h,
-		orientation: layout.orientation,
 		nodeRadius: shape.props.nodeRadius,
 		separation: shape.props.separation,
 		cousinSeparation: shape.props.cousinSeparation,

@@ -10,7 +10,6 @@ import {
 	computeTreeLayout,
 	TreeLayoutLink,
 	TreeLayoutNode,
-	TreeOrientation,
 } from '../../shared/shapes/TreeShape'
 
 export class TreeShapeUtil extends BaseBoxShapeUtil<TLTreeShape> {
@@ -62,7 +61,7 @@ function TreeRenderer({ shape }: { shape: TLTreeShape }) {
 			.data<TreeLayoutLink>(layout.links, (link) => `${link.sourceId}-${link.targetId}`)
 			.join('path')
 			.attr('class', 'tl-tree-diagram__link')
-			.attr('d', (link: TreeLayoutLink) => linkToPath(link, layout.orientation))
+			.attr('d', (link: TreeLayoutLink) => linkToPath(link))
 
 		const nodeGroups = rootGroup
 			.append('g')
@@ -91,19 +90,11 @@ function TreeRenderer({ shape }: { shape: TLTreeShape }) {
 			.attr('shape-rendering', 'geometricPrecision')
 			.text((node: TreeLayoutNode) => node.label)
 
-		if (layout.orientation === 'vertical') {
-			labels
-				.attr('text-anchor', 'middle')
-				.attr('x', 0)
-				.attr('y', shape.props.nodeRadius + 20)
-				.attr('dominant-baseline', 'hanging')
-		} else {
-			labels
-				.attr('text-anchor', 'start')
-				.attr('x', shape.props.nodeRadius + 14)
-				.attr('y', 2)
-				.attr('dominant-baseline', 'middle')
-		}
+		labels
+			.attr('text-anchor', 'start')
+			.attr('x', shape.props.nodeRadius + 14)
+			.attr('y', 2)
+			.attr('dominant-baseline', 'middle')
 
 		nodeGroups
 			.append('title')
@@ -113,12 +104,8 @@ function TreeRenderer({ shape }: { shape: TLTreeShape }) {
 	return <svg ref={svgRef} className="tl-tree-diagram__svg" />
 }
 
-function linkToPath(link: TreeLayoutLink, orientation: TreeOrientation): string {
+function linkToPath(link: TreeLayoutLink): string {
 	const { source, target } = link
-	if (orientation === 'horizontal') {
-		const midX = (source.x + target.x) / 2
-		return `M${source.x},${source.y}C${midX},${source.y} ${midX},${target.y} ${target.x},${target.y}`
-	}
-	const midY = (source.y + target.y) / 2
-	return `M${source.x},${source.y}C${source.x},${midY} ${target.x},${midY} ${target.x},${target.y}`
+	const midX = (source.x + target.x) / 2
+	return `M${source.x},${source.y}C${midX},${source.y} ${midX},${target.y} ${target.x},${target.y}`
 }

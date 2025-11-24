@@ -47,6 +47,7 @@ import {
 	TLTreeShape,
 	createDefaultTreeProps,
 	normalizeTreeNodes,
+	TREE_DEFAULT_ORIENTATION,
 } from '../shapes/TreeShape'
 
 /**
@@ -641,8 +642,6 @@ function convertTreeShapeToTldrawShape(
 		left: baseProps.marginLeft,
 	}
 
-	const orientation = simpleShape.orientation === 'vertical' ? 'vertical' : 'horizontal'
-
 	const nodes = normalizeTreeNodes(
 		simpleShape.nodes.map((node, index) => ({
 			id: node.nodeId || `node-${index + 1}`,
@@ -673,7 +672,7 @@ function convertTreeShapeToTldrawShape(
 				marginRight: margins.right,
 				marginBottom: margins.bottom,
 				marginLeft: margins.left,
-				orientation,
+				orientation: TREE_DEFAULT_ORIENTATION,
 				nodeRadius: simpleShape.nodeRadius ?? baseProps.nodeRadius,
 				separation: simpleShape.separation ?? baseProps.separation,
 				cousinSeparation: simpleShape.cousinSeparation ?? baseProps.cousinSeparation,

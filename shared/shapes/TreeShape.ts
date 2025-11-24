@@ -9,7 +9,7 @@ import { hierarchy, tree, HierarchyPointLink, HierarchyPointNode } from 'd3-hier
 
 export const TREE_SHAPE_TYPE = 'tree-diagram' as const
 
-export type TreeOrientation = 'vertical' | 'horizontal'
+export type TreeOrientation = 'horizontal'
 
 export interface TLTreeNodeProps {
 	id: string
@@ -26,7 +26,7 @@ export interface TLTreeShapeProps {
 	marginRight: number
 	marginBottom: number
 	marginLeft: number
-	orientation: string
+	orientation: TreeOrientation
 	nodeRadius: number
 	separation: number
 	cousinSeparation: number
@@ -84,7 +84,7 @@ export const treeShapeProps: RecordProps<TLTreeShape> = {
 	marginRight: T.number,
 	marginBottom: T.number,
 	marginLeft: T.number,
-	orientation: T.string,
+	orientation: T.literalEnum('horizontal'),
 	nodeRadius: T.number,
 	separation: T.number,
 	cousinSeparation: T.number,
@@ -235,12 +235,8 @@ export function computeTreeLayout(props: TLTreeShapeProps): TreeLayout {
 			return Math.max(base, 0.5)
 		})
 
-	const orientation: TreeOrientation = props.orientation === 'vertical' ? 'vertical' : 'horizontal'
-	if (orientation === 'vertical') {
-		layoutTree.size([innerWidth, innerHeight])
-	} else {
-		layoutTree.size([innerHeight, innerWidth])
-	}
+	const orientation: TreeOrientation = 'horizontal'
+	layoutTree.size([innerHeight, innerWidth])
 
 	const hierarchyRoot = hierarchy<TreeNodeDatum>(rootDatum, (node: TreeNodeDatum) => node.children)
 	layoutTree(hierarchyRoot)
@@ -255,7 +251,7 @@ export function computeTreeLayout(props: TLTreeShapeProps): TreeLayout {
 		: hierarchyRoot.descendants()
 
 	for (const node of filteredNodes) {
-		const position = projectNodePosition(node, margins, orientation)
+		const position = projectNodePosition(node, margins)
 		const relativeX = clamp01(position.x / width)
 		const relativeY = clamp01(position.y / height)
 		nodes.push({
@@ -280,7 +276,7 @@ export function computeTreeLayout(props: TLTreeShapeProps): TreeLayout {
 		: hierarchyRoot.links()
 
 	for (const link of hierarchyLinks) {
-		const endpoints = projectLinkEndpoints(link, margins, orientation)
+		const endpoints = projectLinkEndpoints(link, margins)
 		links.push({
 			sourceId: link.source.data.id,
 			targetId: link.target.data.id,
@@ -313,17 +309,11 @@ function filterSyntheticLinks(link: HierarchyPointLink<TreeNodeDatum>): boolean 
 	return link.source.data.id !== SYNTHETIC_ROOT_ID && link.target.data.id !== SYNTHETIC_ROOT_ID
 }
 
+
 function projectNodePosition(
 	node: HierarchyPointNode<TreeNodeDatum>,
-	margins: { top: number; right: number; bottom: number; left: number },
-	orientation: TreeOrientation
+	margins: { top: number; right: number; bottom: number; left: number }
 ) {
-	if (orientation === 'vertical') {
-		return {
-			x: margins.left + node.x,
-			y: margins.top + node.y,
-		}
-	}
 	return {
 		x: margins.left + node.y,
 		y: margins.top + node.x,
@@ -332,11 +322,10 @@ function projectNodePosition(
 
 function projectLinkEndpoints(
 	link: HierarchyPointLink<TreeNodeDatum>,
-	margins: { top: number; right: number; bottom: number; left: number },
-	orientation: TreeOrientation
+	margins: { top: number; right: number; bottom: number; left: number }
 ) {
-	const source = projectNodePosition(link.source, margins, orientation)
-	const target = projectNodePosition(link.target, margins, orientation)
+	const source = projectNodePosition(link.source, margins)
+	const target = projectNodePosition(link.target, margins)
 
 	return {
 		source,
